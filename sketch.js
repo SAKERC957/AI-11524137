@@ -26,16 +26,16 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(320, 260);
-  // Create the video
-  video = createCapture(VIDEO);
-  video.size(320, 240);
-  video.hide();
 
-  flippedVideo = ml5.flipImage(video)
-  // Start classifying
-  classifyVideo();
-}
+  createCanvas(320, 320);
+  // Create the video
+    var constraints = {
+    audio: false,
+    video: {
+      facingMode: {
+        exact: "environment"
+      }
+    }   
 
 function draw() {
   background(0);
