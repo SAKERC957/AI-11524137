@@ -5,14 +5,14 @@
 
 /* ===
 ml5 Example
-Webcam Image Classification using a pre-trained customized model and p5.js
+Webcam Image Classification using a pretrained customized model and p5.js
 This example uses p5 preload function to create the classifier
 === */
 
 // Classifier Variable
 let classifier;
 // Model URL
-let imageModelURL = 'https://sakerc957.github.io/AI-11524137/';
+let imageModelURL = 'https://11524104-collab.github.io/ai11524104/';
 
 // Video
 let video;
@@ -22,83 +22,85 @@ let label = "";
 
 // Load the model first
 function preload() {
-  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+    classifier = ml5.imageClassifier(imageModelURL + 'model.json');
 }
 
 function setup() {
+    createCanvas(320, 320);
 
-  createCanvas(320, 320);
+    // Try the back camera first, but fall back to the front camera
+    // if the device/browser does not support it.
+    setupCamera();
+}
 
-  
+function setupCamera() {
+    const cameraOptions = [
+        { audio: false, video: { facingMode: { ideal: "environment" } } },
+        { audio: false, video: { facingMode: { ideal: "user" } } },
+        { audio: false, video: { facingMode: "user" } }
+    ];
 
-  // Create the video
+    const tryCamera = (index) => {
+        if (index >= cameraOptions.length) {
+            console.error("No camera available on this device/browser.");
+            label = "No camera";
+            return;
+        }
 
-    var constraints = {
+        const constraints = cameraOptions[index];
 
-    audio: false,
+        // p5.js createCapture supports a success callback as the second arg,
+        // and an error callback as the third arg.
+        const mediaStream = navigator.mediaDevices.getUserMedia(constraints);
 
-    video: {
+        mediaStream.then(() => {
+            video = createCapture(constraints);
+            video.size(320, 320);
+            video.hide();
 
-      facingMode: {
+            flippedVideo = ml5.flipImage(video);
+            classifyVideo();
+        }).catch(() => {
+            console.warn("Camera failed, trying next option:", constraints);
+            tryCamera(index + 1);
+        });
+    };
 
-        exact: "environment"
-
-      }
-
-    }   
-
-    //video: {
-
-      //facingMode: "user"
-
-    //}
-
-  };
-
-  video = createCapture(constraints);
-
-  video.size(320, 320);
-
-  video.hide();
-
-
-
-  flippedVideo = ml5.flipImage(video)
-
-  // Start classifying
-
-  classifyVideo();
-
+    tryCamera(0);
 }
 
 function draw() {
-  background(0);
-  // Draw the video
-  image(flippedVideo, 0, 0);
+    background(0);
 
-  // Draw the label
-  fill(255);
-  textSize(16);
-  textAlign(CENTER);
-  text(label, width / 2, height - 4);
+    if (flippedVideo) {
+        image(flippedVideo, 0, 0);
+    }
+
+    fill(255);
+    textSize(16);
+    textAlign(CENTER);
+    text(label, width / 2, height - 18);
 }
 
 // Get a prediction for the current video frame
 function classifyVideo() {
-  flippedVideo = ml5.flipImage(video)
-  classifier.classify(flippedVideo, gotResult);
+    if (!video) return;
+
+    flippedVideo = ml5.flipImage(video);
+    classifier.classify(flippedVideo, gotResult);
 }
 
 // When we get a result
 function gotResult(error, results) {
-  // If there is an error
-  if (error) {
-    console.error(error);
-    return;
-  }
-  // The results are in an array ordered by confidence.
-  // console.log(results[0]);
-  label = results[0].label;
-  // Classifiy again!
-  classifyVideo();
+    // If there is an error
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    // The results are in an array ordered by confidence.
+    label = results[0].label;
+
+    // Classify again!
+    classifyVideo();
 }
